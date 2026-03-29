@@ -1,6 +1,6 @@
 # Erebos C2
 
-A custom command and control framework built for authorized penetration testing and red team operations.
+A (work in progress) custom command and control framework built for authorized penetration testing and red team operations.
 
 ## Architecture
 
@@ -17,7 +17,7 @@ A custom command and control framework built for authorized penetration testing 
 
 ## Disclaimer
 
-Erebos C2 is intended for authorized penetration testing, red team operations, and educational research only. Use of this tool against systems without explicit written permission is illegal. The authors assume no liability for misuse.
+Erebos C2 is intended for authorized penetration testing, red team operations, and educational research only. Use of this tool against systems without explicit written permission is illegal. The author assumes no liability for misuse.
 
 ## Usage
 
