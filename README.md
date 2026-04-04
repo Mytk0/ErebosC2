@@ -1,5 +1,5 @@
 # Erebos C2
-A (work in progress) custom command and control framework built for authorized penetration testing and red team operations.
+A simple C2 framework built from scratch as a personal research project, exploring implant development, evasion techniques, and C2 architecture.
 
 ## Architecture
 - **Beacon** - C implant using WinINet for HTTPS communication
